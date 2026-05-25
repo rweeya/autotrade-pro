@@ -1,8 +1,6 @@
-// ========== МОДУЛЬ API ==========
-
+// js/api.js - обновленная версия
 const API = (function() {
     
-    // ===== ВСЕ АКТИВЫ =====
     const SYMBOLS = {
         crypto: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT', 'UNIUSDT', 'ATOMUSDT', 'NEARUSDT', 'OPUSDT', 'ARBUSDT', 'APTUSDT', 'LTCUSDT', 'BCHUSDT', 'ETCUSDT'],
         forex: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'],
@@ -10,6 +8,15 @@ const API = (function() {
     };
     
     const ALPHA_VANTAGE_KEY = 'JOWNUIILXWSDDX0O';
+    
+    // Альтернативные API для акций и форекс
+    const FREE_API_URLS = {
+        stock: (symbol) => `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1h&range=1d`,
+        forex: (pair) => {
+            const [from, to] = [pair.slice(0,3), pair.slice(3)];
+            return `https://query1.finance.yahoo.com/v8/finance/chart/${from}${to}=X?interval=1h&range=1d`;
+        }
+    };
     
     function getAllSymbols() {
         return [...SYMBOLS.crypto, ...SYMBOLS.forex, ...SYMBOLS.stock];
@@ -22,77 +29,114 @@ const API = (function() {
         return 'crypto';
     }
     
-    // Проверка, является ли символ криптовалютой
     function isCrypto(symbol) {
         return SYMBOLS.crypto.includes(symbol);
     }
     
-    // ===== ТЕСТОВЫЕ ДАННЫЕ =====
-    function generateMockData(symbol) {
-        let price = 100;
-        if (symbol.includes('BTC')) price = 65000 + (Math.random() - 0.5) * 1000;
-        else if (symbol.includes('ETH')) price = 3500 + (Math.random() - 0.5) * 50;
-        else if (symbol.includes('SOL')) price = 170 + (Math.random() - 0.5) * 5;
-        else if (symbol.includes('EURUSD')) price = 1.08 + (Math.random() - 0.5) * 0.01;
-        else if (symbol.includes('GBPUSD')) price = 1.25 + (Math.random() - 0.5) * 0.01;
-        else if (symbol === 'AAPL') price = 175 + (Math.random() - 0.5) * 2;
-        else if (symbol === 'MSFT') price = 420 + (Math.random() - 0.5) * 5;
-        else if (symbol === 'TSLA') price = 170 + (Math.random() - 0.5) * 3;
-        else if (symbol === 'META') price = 480 + (Math.random() - 0.5) * 5;
-        else if (symbol === 'NVDA') price = 900 + (Math.random() - 0.5) * 10;
-        else if (symbol === 'GOOGL') price = 140 + (Math.random() - 0.5) * 2;
-        else if (symbol === 'AMZN') price = 178 + (Math.random() - 0.5) * 2;
-        else price = 50 + Math.random() * 200;
+    function generateMockData(symbol, basePrice = null) {
+        let price = basePrice || 100;
+        const volatility = 0.015;
         
         let closes = [], highs = [], lows = [];
         let currentPrice = price;
         
         for (let i = 0; i < 100; i++) {
-            let change = (Math.random() - 0.5) * 0.015;
+            let change = (Math.random() - 0.5) * volatility;
             currentPrice = currentPrice * (1 + change);
             closes.push(currentPrice);
             highs.push(currentPrice * (1 + Math.random() * 0.008));
             lows.push(currentPrice * (1 - Math.random() * 0.008));
         }
         
-        return { closes, highs, lows };
+        return { closes, highs, lows, isMock: true };
     }
     
-    // ===== BINANCE API (ТОЛЬКО КРИПТА) =====
     async function getBinanceData(symbol, interval = '1h') {
-        // Если это не криптовалюта — сразу возвращаем тестовые данные
         if (!isCrypto(symbol)) {
             return generateMockData(symbol);
         }
         
+        const intervalMap = { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d' };
+        
         try {
-            const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=100`;
+            // Используем несколько прокси для надежности
+            const proxies = [
+                'https://cors-anywhere.herokuapp.com/',
+                'https://api.allorigins.win/raw?url=',
+                ''
+            ];
             
-            const response = await fetch(corsProxy + url);
-            const data = await response.json();
+            let lastError = null;
             
-            if (!data || data.code === -1121 || !Array.isArray(data) || data.length === 0) {
-                return generateMockData(symbol);
-            }
-            
-            let closes = [], highs = [], lows = [];
-            for (let candle of data) {
-                if (candle && candle.length >= 5) {
-                    highs.push(parseFloat(candle[2]));
-                    lows.push(parseFloat(candle[3]));
-                    closes.push(parseFloat(candle[4]));
+            for (let proxy of proxies) {
+                try {
+                    const url = `${proxy}https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${intervalMap[interval] || '1h'}&limit=100`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Origin': 'https://autotrade-pro.netlify.app'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (data && Array.isArray(data) && data.length > 0 && !data.code) {
+                        let closes = [], highs = [], lows = [];
+                        for (let candle of data) {
+                            if (candle && candle.length >= 5) {
+                                highs.push(parseFloat(candle[2]));
+                                lows.push(parseFloat(candle[3]));
+                                closes.push(parseFloat(candle[4]));
+                            }
+                        }
+                        
+                        if (closes.length > 50) {
+                            return { closes, highs, lows, isMock: false };
+                        }
+                    }
+                } catch(e) {
+                    lastError = e;
+                    continue;
                 }
             }
             
-            return closes.length > 50 ? { closes, highs, lows } : generateMockData(symbol);
+            return generateMockData(symbol);
         } catch(e) {
-            console.log(`Binance ошибка для ${symbol}, использую тестовые данные`);
+            console.log(`Binance error for ${symbol}:`, e);
             return generateMockData(symbol);
         }
     }
     
-    // ===== ALPHA VANTAGE API (ФОРЕКС + АКЦИИ) =====
+    async function getYahooFinanceData(symbol, assetType) {
+        try {
+            const url = assetType === 'forex' 
+                ? FREE_API_URLS.forex(symbol)
+                : FREE_API_URLS.stock(symbol);
+                
+            const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            const data = await response.json();
+            
+            if (data && data.chart && data.chart.result && data.chart.result[0]) {
+                const result = data.chart.result[0];
+                const indicators = result.indicators.quote[0];
+                const timestamps = result.timestamp;
+                
+                if (indicators && indicators.close && indicators.close.length > 0) {
+                    let closes = indicators.close.filter(c => c !== null);
+                    let highs = indicators.high.filter(h => h !== null);
+                    let lows = indicators.low.filter(l => l !== null);
+                    
+                    if (closes.length > 50) {
+                        return { closes, highs, lows, isMock: false };
+                    }
+                }
+            }
+            
+            return generateMockData(symbol);
+        } catch(e) {
+            console.log(`Yahoo error for ${symbol}:`, e);
+            return generateMockData(symbol);
+        }
+    }
+    
     async function getAlphaVantageData(symbol, interval = '1h') {
         try {
             const isForex = SYMBOLS.forex.includes(symbol);
@@ -106,11 +150,11 @@ const API = (function() {
                 url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
             }
             
-            const response = await fetch(url);
+            const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
             const data = await response.json();
             
             if (data['Error Message'] || data['Note']) {
-                return generateMockData(symbol);
+                return await getYahooFinanceData(symbol, isForex ? 'forex' : 'stock');
             }
             
             let timeSeries = data['Time Series (Daily)'] || data['Time Series FX (Daily)'];
@@ -126,25 +170,24 @@ const API = (function() {
                 }
                 
                 if (closes.length > 0) {
-                    return { closes, highs, lows };
+                    return { closes, highs, lows, isMock: false };
                 }
             }
             
-            return generateMockData(symbol);
+            return await getYahooFinanceData(symbol, isForex ? 'forex' : 'stock');
         } catch(e) {
-            console.log(`Alpha Vantage ошибка для ${symbol}`);
-            return generateMockData(symbol);
+            return await getYahooFinanceData(symbol, 'stock');
         }
     }
     
-    // ===== ОСНОВНАЯ ФУНКЦИЯ =====
     async function getData(symbol, interval = '1h') {
         const assetType = getAssetType(symbol);
         
         if (assetType === 'crypto') {
             return await getBinanceData(symbol, interval);
         } else {
-            return await getAlphaVantageData(symbol, interval);
+            // Для форекс и акций используем Yahoo Finance (более стабильный)
+            return await getYahooFinanceData(symbol, assetType);
         }
     }
     
