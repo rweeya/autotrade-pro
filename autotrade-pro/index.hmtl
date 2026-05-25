@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Trade Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    
+    <div class="terminal">
+        <div class="header">
+            <div class="logo"><h1>⚡ AUTO TRADE PRO ⚡</h1></div>
+            <div class="status">
+                <div class="live-badge">🟢 LIVE</div>
+                <div class="time-badge" id="liveTime">--:--:--</div>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="info-panel">
+                <h3>📊 СТАТИСТИКА</h3>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-value" id="totalSignals">0</div><div class="stat-label">ВСЕГО</div></div>
+                    <div class="stat-card"><div class="stat-value" id="buySignals">0</div><div class="stat-label">BUY</div></div>
+                    <div class="stat-card"><div class="stat-value" id="sellSignals">0</div><div class="stat-label">SELL</div></div>
+                    <div class="stat-card"><div class="stat-value" id="accuracy">—</div><div class="stat-label">ТОЧНОСТЬ</div></div>
+                </div>
+            </div>
+            
+            <div class="signals-panel">
+                <div class="signals-header">
+                    <h3>🎯 СИГНАЛЫ (4+ индикаторов)</h3>
+                </div>
+                <div class="filter-row">
+                    <input type="text" id="searchFilter" class="filter-input" placeholder="🔍 Поиск монеты...">
+                    <select id="typeFilter" class="filter-select">
+                        <option value="all">📌 Все</option>
+                        <option value="buy">🟢 Только BUY</option>
+                        <option value="sell">🔴 Только SELL</option>
+                    </select>
+                </div>
+                <div class="timeframe-buttons" id="timeframeButtons">
+                    <button class="tf-btn" data-tf="15m">15м</button>
+                    <button class="tf-btn active" data-tf="1h">1ч</button>
+                    <button class="tf-btn" data-tf="4h">4ч</button>
+                    <button class="tf-btn" data-tf="1d">1д</button>
+                </div>
+                <div class="signals-container" id="signalsContainer">
+                    <div style="text-align: center; padding: 40px; color: #888;">⏳ Загрузка...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            🔮 5 индикаторов | 100+ активов | Клик → Bybit
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/indicators.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
