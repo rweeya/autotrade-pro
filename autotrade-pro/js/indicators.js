@@ -83,6 +83,10 @@ const Indicators = (function() {
     
     // Анализ всех индикаторов
     function analyze(closes, highs, lows) {
+        if (!closes || closes.length < 50) {
+            return { action: null, strength: 0, reasons: 'Недостаточно данных', rsi: 50, price: 0 };
+        }
+        
         let rsi = calculateRSI(closes);
         let ema20 = calculateEMA(closes, 20);
         let ema50 = calculateEMA(closes, 50);
