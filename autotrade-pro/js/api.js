@@ -1,4 +1,4 @@
-// js/api.js - обновленная версия
+// js/api.js - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
 const API = (function() {
     
     const SYMBOLS = {
@@ -34,9 +34,27 @@ const API = (function() {
     }
     
     function generateMockData(symbol, basePrice = null) {
-        let price = basePrice || 100;
-        const volatility = 0.015;
+        // Реалистичные цены для разных активов
+        let price = basePrice;
+        if (!price) {
+            if (symbol.includes('BTC')) price = 65000 + (Math.random() - 0.5) * 1000;
+            else if (symbol.includes('ETH')) price = 3500 + (Math.random() - 0.5) * 50;
+            else if (symbol.includes('SOL')) price = 170 + (Math.random() - 0.5) * 5;
+            else if (symbol.includes('BNB')) price = 580 + (Math.random() - 0.5) * 10;
+            else if (symbol === 'EURUSD') price = 1.08 + (Math.random() - 0.5) * 0.01;
+            else if (symbol === 'GBPUSD') price = 1.25 + (Math.random() - 0.5) * 0.01;
+            else if (symbol === 'USDJPY') price = 150 + (Math.random() - 0.5) * 2;
+            else if (symbol === 'AAPL') price = 175 + (Math.random() - 0.5) * 2;
+            else if (symbol === 'MSFT') price = 420 + (Math.random() - 0.5) * 5;
+            else if (symbol === 'GOOGL') price = 140 + (Math.random() - 0.5) * 2;
+            else if (symbol === 'AMZN') price = 178 + (Math.random() - 0.5) * 2;
+            else if (symbol === 'TSLA') price = 170 + (Math.random() - 0.5) * 3;
+            else if (symbol === 'META') price = 480 + (Math.random() - 0.5) * 5;
+            else if (symbol === 'NVDA') price = 900 + (Math.random() - 0.5) * 10;
+            else price = 50 + Math.random() * 200;
+        }
         
+        const volatility = 0.015;
         let closes = [], highs = [], lows = [];
         let currentPrice = price;
         
@@ -52,66 +70,89 @@ const API = (function() {
     }
     
     async function getBinanceData(symbol, interval = '1h') {
+        // ВАЖНО: только для криптовалют!
         if (!isCrypto(symbol)) {
+            console.log(`${symbol} не криптовалюта, используем mock данные`);
             return generateMockData(symbol);
         }
         
         const intervalMap = { '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d' };
+        const binanceInterval = intervalMap[interval] || '1h';
         
         try {
-            // Используем несколько прокси для надежности
-            const proxies = [
-                'https://cors-anywhere.herokuapp.com/',
-                'https://api.allorigins.win/raw?url=',
-                ''
-            ];
+            // Используем публичное API Binance без CORS (иногда работает)
+            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${binanceInterval}&limit=100`;
             
-            let lastError = null;
+            // Пробуем через прокси
+            const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
             
-            for (let proxy of proxies) {
-                try {
-                    const url = `${proxy}https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${intervalMap[interval] || '1h'}&limit=100`;
-                    const response = await fetch(url, {
-                        headers: {
-                            'Origin': 'https://autotrade-pro.netlify.app'
-                        }
-                    });
-                    const data = await response.json();
-                    
-                    if (data && Array.isArray(data) && data.length > 0 && !data.code) {
-                        let closes = [], highs = [], lows = [];
-                        for (let candle of data) {
-                            if (candle && candle.length >= 5) {
-                                highs.push(parseFloat(candle[2]));
-                                lows.push(parseFloat(candle[3]));
-                                closes.push(parseFloat(candle[4]));
-                            }
-                        }
-                        
-                        if (closes.length > 50) {
-                            return { closes, highs, lows, isMock: false };
-                        }
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            const response = await fetch(proxyUrl, {
+                signal: controller.signal,
+                headers: {
+                    'Origin': 'https://autotrade-pro.netlify.app'
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data && Array.isArray(data) && data.length > 0 && !data.code) {
+                let closes = [], highs = [], lows = [];
+                for (let candle of data) {
+                    if (candle && candle.length >= 5) {
+                        highs.push(parseFloat(candle[2]));
+                        lows.push(parseFloat(candle[3]));
+                        closes.push(parseFloat(candle[4]));
                     }
-                } catch(e) {
-                    lastError = e;
-                    continue;
+                }
+                
+                if (closes.length > 50) {
+                    console.log(`✅ Binance: получены данные для ${symbol}`);
+                    return { closes, highs, lows, isMock: false };
                 }
             }
             
+            console.log(`⚠️ Binance: недостаточно данных для ${symbol}, используем mock`);
             return generateMockData(symbol);
+            
         } catch(e) {
-            console.log(`Binance error for ${symbol}:`, e);
+            console.log(`❌ Binance ошибка для ${symbol}: ${e.message}, используем mock данные`);
             return generateMockData(symbol);
         }
     }
     
     async function getYahooFinanceData(symbol, assetType) {
         try {
-            const url = assetType === 'forex' 
-                ? FREE_API_URLS.forex(symbol)
-                : FREE_API_URLS.stock(symbol);
-                
-            const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            let url;
+            if (assetType === 'forex') {
+                url = FREE_API_URLS.forex(symbol);
+            } else {
+                url = FREE_API_URLS.stock(symbol);
+            }
+            
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            const response = await fetch(proxyUrl, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
             const data = await response.json();
             
             if (data && data.chart && data.chart.result && data.chart.result[0]) {
@@ -120,19 +161,22 @@ const API = (function() {
                 const timestamps = result.timestamp;
                 
                 if (indicators && indicators.close && indicators.close.length > 0) {
-                    let closes = indicators.close.filter(c => c !== null);
-                    let highs = indicators.high.filter(h => h !== null);
-                    let lows = indicators.low.filter(l => l !== null);
+                    let closes = indicators.close.filter(c => c !== null && !isNaN(c));
+                    let highs = indicators.high.filter(h => h !== null && !isNaN(h));
+                    let lows = indicators.low.filter(l => l !== null && !isNaN(l));
                     
-                    if (closes.length > 50) {
+                    if (closes.length > 20) {
+                        console.log(`✅ Yahoo: получены данные для ${symbol}`);
                         return { closes, highs, lows, isMock: false };
                     }
                 }
             }
             
+            console.log(`⚠️ Yahoo: недостаточно данных для ${symbol}, используем mock`);
             return generateMockData(symbol);
+            
         } catch(e) {
-            console.log(`Yahoo error for ${symbol}:`, e);
+            console.log(`❌ Yahoo ошибка для ${symbol}: ${e.message}, используем mock данные`);
             return generateMockData(symbol);
         }
     }
@@ -150,10 +194,25 @@ const API = (function() {
                 url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
             }
             
-            const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            const response = await fetch(proxyUrl, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
             const data = await response.json();
             
             if (data['Error Message'] || data['Note']) {
+                console.log(`⚠️ Alpha Vantage лимит для ${symbol}, переключаемся на Yahoo`);
                 return await getYahooFinanceData(symbol, isForex ? 'forex' : 'stock');
             }
             
@@ -164,32 +223,55 @@ const API = (function() {
                 let closes = [], highs = [], lows = [];
                 
                 for (let date of dates) {
-                    closes.push(parseFloat(timeSeries[date]['4. close']));
-                    highs.push(parseFloat(timeSeries[date]['2. high']));
-                    lows.push(parseFloat(timeSeries[date]['3. low']));
+                    const close = parseFloat(timeSeries[date]['4. close']);
+                    const high = parseFloat(timeSeries[date]['2. high']);
+                    const low = parseFloat(timeSeries[date]['3. low']);
+                    
+                    if (!isNaN(close) && !isNaN(high) && !isNaN(low)) {
+                        closes.push(close);
+                        highs.push(high);
+                        lows.push(low);
+                    }
                 }
                 
-                if (closes.length > 0) {
+                if (closes.length > 20) {
+                    console.log(`✅ Alpha Vantage: получены данные для ${symbol}`);
                     return { closes, highs, lows, isMock: false };
                 }
             }
             
             return await getYahooFinanceData(symbol, isForex ? 'forex' : 'stock');
+            
         } catch(e) {
-            return await getYahooFinanceData(symbol, 'stock');
+            console.log(`❌ Alpha Vantage ошибка для ${symbol}, переключаемся на Yahoo`);
+            return await getYahooFinanceData(symbol, SYMBOLS.forex.includes(symbol) ? 'forex' : 'stock');
         }
     }
     
     async function getData(symbol, interval = '1h') {
         const assetType = getAssetType(symbol);
         
+        console.log(`📊 Загрузка данных для ${symbol} (${assetType})`);
+        
         if (assetType === 'crypto') {
+            // Для криптовалют используем Binance
             return await getBinanceData(symbol, interval);
+        } else if (assetType === 'forex') {
+            // Для форекс сначала пробуем Alpha Vantage, потом Yahoo
+            return await getAlphaVantageData(symbol, interval);
         } else {
-            // Для форекс и акций используем Yahoo Finance (более стабильный)
-            return await getYahooFinanceData(symbol, assetType);
+            // Для акций сначала пробуем Alpha Vantage, потом Yahoo
+            return await getAlphaVantageData(symbol, interval);
         }
     }
     
-    return { getAllSymbols, getAssetType, getData, generateMockData };
+    // Экспортируем функции
+    return { 
+        getAllSymbols, 
+        getAssetType, 
+        getData, 
+        generateMockData,
+        isCrypto,
+        SYMBOLS
+    };
 })();
