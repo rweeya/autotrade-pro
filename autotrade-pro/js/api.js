@@ -2,31 +2,32 @@
 
 const API = (function() {
     
-    // Список активов
+    // Только криптовалюты (Binance)
     const SYMBOLS = {
         crypto: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT', 'UNIUSDT', 'ATOMUSDT', 'NEARUSDT', 'OPUSDT', 'ARBUSDT', 'APTUSDT', 'LTCUSDT', 'BCHUSDT', 'ETCUSDT', 'XLMUSDT', 'VETUSDT', 'TRXUSDT'],
-        forex: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD'],
-        stock: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA']
+        forex: [],
+        stock: []
     };
     
     function getAllSymbols() {
-        return [...SYMBOLS.crypto, ...SYMBOLS.forex, ...SYMBOLS.stock];
+        return [...SYMBOLS.crypto];
     }
     
     function getAssetType(symbol) {
         if (SYMBOLS.crypto.includes(symbol)) return 'crypto';
-        if (SYMBOLS.forex.includes(symbol)) return 'forex';
-        if (SYMBOLS.stock.includes(symbol)) return 'stock';
         return 'crypto';
     }
     
-    // Эмуляция данных (для демо)
-    async function getMockData(symbol) {
+    // Генерация тестовых данных (без API)
+    function generateMockData(symbol) {
         let basePrice = 100;
         if (symbol.includes('BTC')) basePrice = 65000;
         else if (symbol.includes('ETH')) basePrice = 3500;
         else if (symbol.includes('SOL')) basePrice = 170;
         else if (symbol.includes('BNB')) basePrice = 580;
+        else if (symbol.includes('XRP')) basePrice = 0.52;
+        else if (symbol.includes('DOGE')) basePrice = 0.12;
+        else basePrice = 50 + Math.random() * 200;
         
         let closes = [], highs = [], lows = [];
         let price = basePrice;
@@ -42,12 +43,19 @@ const API = (function() {
         return { closes, highs, lows };
     }
     
-    // Реальный API (заготовка)
+    // Прокси через CORS-anywhere (для Binance)
     async function getBinanceData(symbol, interval = '1h') {
         try {
+            // Используем CORS-прокси для обхода блокировки
+            const corsProxy = 'https://cors-anywhere.herokuapp.com/';
             const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=100`;
-            const response = await fetch(url);
+            
+            const response = await fetch(corsProxy + url);
             const data = await response.json();
+            
+            if (!data || data.code === -1121) {
+                throw new Error('Symbol not found');
+            }
             
             let closes = [], highs = [], lows = [];
             for (let candle of data) {
@@ -57,9 +65,10 @@ const API = (function() {
             }
             return { closes, highs, lows };
         } catch(e) {
-            return getMockData(symbol);
+            console.log(`Использую тестовые данные для ${symbol}`);
+            return generateMockData(symbol);
         }
     }
     
-    return { getAllSymbols, getAssetType, getBinanceData, getMockData };
+    return { getAllSymbols, getAssetType, getBinanceData, generateMockData };
 })();
