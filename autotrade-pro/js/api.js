@@ -2,19 +2,13 @@
 
 const API = (function() {
     
-    // ===== ВСЕ АКТИВЫ (ПРАВИЛЬНО РАЗДЕЛЕНЫ) =====
+    // ===== ВСЕ АКТИВЫ =====
     const SYMBOLS = {
-        // Только криптовалюты для Binance (должны заканчиваться на USDT)
         crypto: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT', 'UNIUSDT', 'ATOMUSDT', 'NEARUSDT', 'OPUSDT', 'ARBUSDT', 'APTUSDT', 'LTCUSDT', 'BCHUSDT', 'ETCUSDT'],
-        
-        // Форекс (для Alpha Vantage)
         forex: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'],
-        
-        // Акции (для Alpha Vantage)
-        stock: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'JNJ', 'WMT', 'KO', 'DIS', 'NFLX', 'AMD', 'BA']
+        stock: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'JNJ', 'WMT', 'KO', 'DIS', 'NFLX']
     };
     
-    // ТВОЙ API КЛЮЧ ALPHA VANTAGE
     const ALPHA_VANTAGE_KEY = 'JOWNUIILXWSDDX0O';
     
     function getAllSymbols() {
@@ -28,47 +22,50 @@ const API = (function() {
         return 'crypto';
     }
     
-    // ===== ГЕНЕРАЦИЯ ТЕСТОВЫХ ДАННЫХ (запасной вариант) =====
+    // Проверка, является ли символ криптовалютой
+    function isCrypto(symbol) {
+        return SYMBOLS.crypto.includes(symbol);
+    }
+    
+    // ===== ТЕСТОВЫЕ ДАННЫЕ =====
     function generateMockData(symbol) {
         let price = 100;
-        if (symbol.includes('BTC')) price = 65000;
-        else if (symbol.includes('ETH')) price = 3500;
-        else if (symbol.includes('SOL')) price = 170;
-        else if (symbol.includes('BNB')) price = 580;
-        else if (symbol.includes('EURUSD')) price = 1.08;
-        else if (symbol.includes('GBPUSD')) price = 1.25;
-        else if (symbol.includes('USDJPY')) price = 148;
-        else if (symbol === 'AAPL') price = 175;
-        else if (symbol === 'MSFT') price = 420;
-        else if (symbol === 'TSLA') price = 170;
-        else if (symbol === 'NVDA') price = 900;
-        else if (symbol === 'GOOGL') price = 140;
-        else if (symbol === 'AMZN') price = 178;
-        else if (symbol === 'META') price = 480;
+        if (symbol.includes('BTC')) price = 65000 + (Math.random() - 0.5) * 1000;
+        else if (symbol.includes('ETH')) price = 3500 + (Math.random() - 0.5) * 50;
+        else if (symbol.includes('SOL')) price = 170 + (Math.random() - 0.5) * 5;
+        else if (symbol.includes('EURUSD')) price = 1.08 + (Math.random() - 0.5) * 0.01;
+        else if (symbol.includes('GBPUSD')) price = 1.25 + (Math.random() - 0.5) * 0.01;
+        else if (symbol === 'AAPL') price = 175 + (Math.random() - 0.5) * 2;
+        else if (symbol === 'MSFT') price = 420 + (Math.random() - 0.5) * 5;
+        else if (symbol === 'TSLA') price = 170 + (Math.random() - 0.5) * 3;
+        else if (symbol === 'META') price = 480 + (Math.random() - 0.5) * 5;
+        else if (symbol === 'NVDA') price = 900 + (Math.random() - 0.5) * 10;
+        else if (symbol === 'GOOGL') price = 140 + (Math.random() - 0.5) * 2;
+        else if (symbol === 'AMZN') price = 178 + (Math.random() - 0.5) * 2;
         else price = 50 + Math.random() * 200;
         
         let closes = [], highs = [], lows = [];
         let currentPrice = price;
         
         for (let i = 0; i < 100; i++) {
-            let change = (Math.random() - 0.5) * 0.01;
+            let change = (Math.random() - 0.5) * 0.015;
             currentPrice = currentPrice * (1 + change);
             closes.push(currentPrice);
-            highs.push(currentPrice * (1 + Math.random() * 0.005));
-            lows.push(currentPrice * (1 - Math.random() * 0.005));
+            highs.push(currentPrice * (1 + Math.random() * 0.008));
+            lows.push(currentPrice * (1 - Math.random() * 0.008));
         }
         
         return { closes, highs, lows };
     }
     
-    // ===== BINANCE API (ТОЛЬКО КРИПТОВАЛЮТЫ) =====
+    // ===== BINANCE API (ТОЛЬКО КРИПТА) =====
     async function getBinanceData(symbol, interval = '1h') {
+        // Если это не криптовалюта — сразу возвращаем тестовые данные
+        if (!isCrypto(symbol)) {
+            return generateMockData(symbol);
+        }
+        
         try {
-            // Проверка: если символ не заканчивается на USDT — это не криптовалюта
-            if (!symbol.endsWith('USDT')) {
-                return generateMockData(symbol);
-            }
-            
             const corsProxy = 'https://cors-anywhere.herokuapp.com/';
             const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=100`;
             
@@ -88,9 +85,9 @@ const API = (function() {
                 }
             }
             
-            return closes.length > 0 ? { closes, highs, lows } : generateMockData(symbol);
+            return closes.length > 50 ? { closes, highs, lows } : generateMockData(symbol);
         } catch(e) {
-            console.log(`Binance ошибка для ${symbol}`);
+            console.log(`Binance ошибка для ${symbol}, использую тестовые данные`);
             return generateMockData(symbol);
         }
     }
@@ -102,12 +99,10 @@ const API = (function() {
             let url;
             
             if (isForex) {
-                // Форекс
                 const fromCurrency = symbol.slice(0, 3);
                 const toCurrency = symbol.slice(3);
                 url = `https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=${fromCurrency}&to_symbol=${toCurrency}&apikey=${ALPHA_VANTAGE_KEY}`;
             } else {
-                // Акции
                 url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
             }
             
