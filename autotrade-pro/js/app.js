@@ -1,18 +1,18 @@
-// js/app.js - обновленная версия
+// js/app.js - ОБНОВЛЕННАЯ ВЕРСИЯ С TRADINGVIEW
 let previousSignalsList = [];
 let currentTimeframe = '1h';
-let scanTimeout = null;
 let isScanning = false;
+let tradingViewMode = true; // Используем TradingView режим
 
 // Bybit Testnet конфиг
 const BYBIT_CONFIG = {
     testnet: true,
-    apiKey: null, // Добавьте ваш API ключ Bybit Testnet
+    apiKey: null,
     apiSecret: null,
     baseUrl: 'https://api-testnet.bybit.com'
 };
 
-// Виртуальный портфель для тестирования
+// Виртуальный портфель
 let virtualPortfolio = {
     balance: 10000,
     positions: [],
@@ -24,22 +24,31 @@ async function scanSignals() {
     isScanning = true;
     
     const container = document.getElementById('signalsContainer');
-    container.innerHTML = '<div style="text-align: center; padding: 40px;">⏳ Анализ 40+ активов...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 40px;">🎯 Анализ TradingView сигналов...</div>';
     
-    const symbols = API.getAllSymbols();
     let signals = [];
     
-    // Оптимизация: обрабатываем пачками по 5 символов
-    const batchSize = 5;
-    for (let i = 0; i < symbols.length; i += batchSize) {
-        const batch = symbols.slice(i, i + batchSize);
-        const batchPromises = batch.map(async (symbol) => {
+    if (tradingViewMode) {
+        // Используем TradingView сигналы
+        signals = await TradingView.scanAllSymbols();
+        
+        // Добавляем в историю
+        signals.forEach(signal => {
+            if (History.addSignal) {
+                History.addSignal(signal);
+            }
+        });
+    } else {
+        // Fallback на старую систему
+        const symbols = API.getAllSymbols();
+        
+        for (let symbol of symbols) {
             try {
                 const data = await API.getData(symbol, currentTimeframe);
                 const analysis = Indicators.analyze(data.closes, data.highs, data.lows);
                 
                 if (analysis.action && analysis.strength >= 4) {
-                    const signal = {
+                    signals.push({
                         symbol: symbol.includes('USDT') ? symbol.replace('USDT', '/USDT') : symbol,
                         action: analysis.action,
                         price: analysis.price,
@@ -47,33 +56,16 @@ async function scanSignals() {
                         strength: analysis.strength,
                         reasons: analysis.reasons,
                         assetType: API.getAssetType(symbol),
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    // Добавляем в историю
-                    History.addSignal(signal);
-                    
-                    // Проверяем автоторговлю
-                    if (virtualPortfolio.balance > 0) {
-                        await executeAutoTrade(signal);
-                    }
-                    
-                    return signal;
+                        timestamp: new Date().toISOString(),
+                        source: 'Indicators'
+                    });
                 }
             } catch(e) {
                 console.log(`Ошибка ${symbol}:`, e);
             }
-            return null;
-        });
-        
-        const batchResults = await Promise.all(batchPromises);
-        signals.push(...batchResults.filter(s => s !== null));
-        
-        // Небольшая задержка между пачками
-        await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 50));
+        }
     }
-    
-    signals.sort((a,b) => b.strength - a.strength);
     
     const newSignals = signals.filter(s => 
         !previousSignalsList.some(p => p.symbol === s.symbol && p.action === s.action)
@@ -81,10 +73,17 @@ async function scanSignals() {
     
     if (newSignals.length > 0) {
         UI.playAlertSound();
-        UI.speak(`Новый сигнал! ${newSignals[0].action} по ${newSignals[0].symbol}`);
+        UI.speak(`Новый TradingView сигнал! ${newSignals[0].action} по ${newSignals[0].symbol}`);
+        
+        // Автоторговля
+        newSignals.forEach(signal => {
+            if (virtualPortfolio.balance > 0) {
+                executeAutoTrade(signal);
+            }
+        });
     }
-    previousSignalsList = signals;
     
+    previousSignalsList = signals;
     UI.renderSignals(signals);
     UI.updateStats(signals);
     
@@ -93,20 +92,17 @@ async function scanSignals() {
 
 async function executeAutoTrade(signal) {
     try {
-        // Только для криптовалют на тестовой сети
         if (!signal.symbol.includes('USDT') || !BYBIT_CONFIG.apiKey) {
+            console.log(`🤖 Автоторговля пропущена для ${signal.symbol} (только крипто USDT пары)`);
             return;
         }
         
         const symbol = signal.symbol.replace('/', '');
         const amount = calculatePositionSize(signal);
         
-        console.log(`🤖 Автоторговля: ${signal.action} ${symbol} на сумму $${amount}`);
+        console.log(`🤖 АВТОТОРГОВЛЯ: ${signal.action.toUpperCase()} ${symbol} на сумму $${amount.toFixed(2)}`);
         
-        // В реальном коде здесь был бы API запрос к Bybit
-        // const order = await placeBybitOrder(symbol, signal.action, amount);
-        
-        // Симулируем ордер для демонстрации
+        // Симулируем ордер
         const order = {
             id: Date.now(),
             symbol: symbol,
@@ -121,70 +117,100 @@ async function executeAutoTrade(signal) {
         
         updatePortfolioDisplay();
         
+        UI.speak(`Авто сделка: ${signal.action} по ${symbol}`);
+        
     } catch(e) {
         console.log('Auto trade error:', e);
     }
 }
 
 function calculatePositionSize(signal) {
-    // Рискуем 2% от баланса на сделку
-    const riskPercent = 0.02;
+    const riskPercent = 0.02; // 2% риска
     return virtualPortfolio.balance * riskPercent;
 }
 
 function updatePortfolioDisplay() {
     let portfolioHtml = `
-        <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 10px;">
-            <h4 style="color: #ff00ff;">💼 ВИРТУАЛЬНЫЙ ПОРТФЕЛЬ</h4>
-            <div>💰 Баланс: $${virtualPortfolio.balance.toFixed(2)}</div>
-            <div>📊 Открыто позиций: ${virtualPortfolio.positions.length}</div>
+        <div class="portfolio-panel" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 10px;">
+            <h4 style="color: #ff00ff; margin-bottom: 10px;">💼 ВИРТУАЛЬНЫЙ ПОРТФЕЛЬ</h4>
+            <div style="font-size: 14px;">💰 Баланс: $${virtualPortfolio.balance.toFixed(2)}</div>
+            <div style="font-size: 12px;">📊 Открыто позиций: ${virtualPortfolio.positions.length}</div>
             ${virtualPortfolio.positions.length > 0 ? `
-                <div style="margin-top: 10px; font-size: 11px;">
-                    <div>🏃‍♂️ Активные позиции:</div>
+                <div style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
+                    <div style="font-size: 11px; color: #aaa;">🏃‍♂️ Активные позиции:</div>
                     ${virtualPortfolio.positions.map(p => `
-                        <div>${p.side} ${p.symbol} @ $${p.price}</div>
+                        <div style="font-size: 10px; padding: 4px 0;">${p.side} ${p.symbol} @ $${p.price.toFixed(2)}</div>
                     `).join('')}
                 </div>
-            ` : ''}
+            ` : '<div style="font-size: 11px; color: #666;">Нет открытых позиций</div>'}
+            <button onclick="closeAllPositions()" style="margin-top: 10px; background: rgba(255,0,0,0.3); border: 1px solid red; color: white; padding: 5px 10px; border-radius: 10px; cursor: pointer; font-size: 11px;">
+                🔒 Закрыть все позиции
+            </button>
         </div>
     `;
     
     const infoPanel = document.querySelector('.info-panel');
-    if (!document.querySelector('.portfolio-panel')) {
-        infoPanel.insertAdjacentHTML('beforeend', portfolioHtml);
-    } else {
-        document.querySelector('.portfolio-panel')?.remove();
-        infoPanel.insertAdjacentHTML('beforeend', portfolioHtml);
+    const oldPanel = document.querySelector('.portfolio-panel');
+    if (oldPanel) oldPanel.remove();
+    infoPanel.insertAdjacentHTML('beforeend', portfolioHtml);
+}
+
+function closeAllPositions() {
+    if (confirm('Закрыть все позиции?')) {
+        const totalValue = virtualPortfolio.positions.reduce((sum, pos) => sum + pos.amount, 0);
+        virtualPortfolio.balance += totalValue;
+        virtualPortfolio.positions = [];
+        updatePortfolioDisplay();
+        UI.speak('Все позиции закрыты');
     }
 }
 
-// Функция для добавления фильтра по типу актива
 function addAssetFilter() {
     const filterRow = document.querySelector('.filter-row');
-    const assetFilter = document.createElement('select');
-    assetFilter.id = 'assetFilter';
-    assetFilter.className = 'filter-select';
-    assetFilter.innerHTML = `
-        <option value="all">📊 Все активы</option>
-        <option value="crypto">🪙 Криптовалюты</option>
-        <option value="forex">💱 Форекс</option>
-        <option value="stock">📈 Акции</option>
-    `;
-    assetFilter.addEventListener('change', () => UI.filterSignals());
-    filterRow.appendChild(assetFilter);
+    if (!document.getElementById('assetFilter')) {
+        const assetFilter = document.createElement('select');
+        assetFilter.id = 'assetFilter';
+        assetFilter.className = 'filter-select';
+        assetFilter.innerHTML = `
+            <option value="all">📊 Все активы</option>
+            <option value="crypto">🪙 Криптовалюты</option>
+            <option value="forex">💱 Форекс</option>
+            <option value="stock">📈 Акции</option>
+        `;
+        assetFilter.addEventListener('change', () => UI.filterSignals());
+        filterRow.appendChild(assetFilter);
+    }
 }
 
 function init() {
     UI.updateTime();
     setInterval(UI.updateTime, 1000);
     
-    // Оптимизация: сканируем реже для экономии ресурсов
-    scanSignals();
-    setInterval(scanSignals, 90000); // Каждые 90 секунд вместо 60
+    // Показываем инструкцию по TradingView
+    console.log(TradingView.showSetupInstructions());
     
+    // Запускаем эмуляцию TradingView сигналов (каждые 30 секунд)
+    TradingView.startEmulation(30);
+    
+    // Подписываемся на оповещения
+    TradingView.onAlert((signal) => {
+        console.log('📡 Получен TradingView сигнал:', signal);
+        UI.playAlertSound();
+        UI.speak(`TradingView сигнал: ${signal.action} по ${signal.symbol}`);
+        scanSignals(); // Обновляем список сигналов
+    });
+    
+    // Первое сканирование
+    scanSignals();
+    
+    // Регулярное сканирование
+    setInterval(scanSignals, 60000);
+    
+    // Фильтры
     document.getElementById('searchFilter').addEventListener('keyup', () => UI.filterSignals());
     document.getElementById('typeFilter').addEventListener('change', () => UI.filterSignals());
     
+    // Таймфреймы
     document.querySelectorAll('.tf-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
@@ -199,15 +225,20 @@ function init() {
 }
 
 window.openChart = function(symbol) {
+    // Открываем график в TradingView
+    let tvSymbol = symbol;
     if (symbol.includes('USDT')) {
-        let clean = symbol.replace('/USDT', '').replace('USDT', '');
-        window.open(`https://www.bybit.com/trade/spot/${clean}/USDT?interval=60`, '_blank');
-    } else if (symbol.includes('/')) {
-        window.open(`https://www.tradingview.com/chart/?symbol=FX:${symbol.replace('/', '')}`, '_blank');
+        tvSymbol = `BINANCE:${symbol.replace('/USDT', '').replace('USDT', '')}USDT`;
+    } else if (symbol.match(/[A-Z]{6}/)) {
+        tvSymbol = `FX:${symbol}`;
     } else {
-        window.open(`https://www.tradingview.com/chart/?symbol=${symbol}`, '_blank');
+        tvSymbol = `NASDAQ:${symbol}`;
     }
+    
+    window.open(`https://www.tradingview.com/chart/?symbol=${tvSymbol}`, '_blank');
 };
+
+window.closeAllPositions = closeAllPositions;
 
 // Оптимизированная 3D сцена
 (function init3D() {
@@ -217,7 +248,6 @@ window.openChart = function(symbol) {
     camera.position.set(0, 0, 15);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Оптимизация
     
     const gridHelper = new THREE.GridHelper(30, 40, 0xff00ff, 0x00ffff);
     gridHelper.position.y = -3;
@@ -228,8 +258,7 @@ window.openChart = function(symbol) {
     const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xff00ff }));
     scene.add(wireframe);
     
-    // Оптимизация количества частиц
-    const particlesCount = window.innerWidth < 768 ? 600 : 1200;
+    const particlesCount = 800;
     const particlesGeometry = new THREE.BufferGeometry();
     const particlesPositions = new Float32Array(particlesCount * 3);
     for (let i = 0; i < particlesCount; i++) {
@@ -249,15 +278,9 @@ window.openChart = function(symbol) {
     scene.add(pointLight);
     
     let time = 0;
-    let lastTime = 0;
-    
     function animate() {
         requestAnimationFrame(animate);
-        const now = Date.now();
-        const delta = Math.min(16, now - lastTime);
-        lastTime = now;
-        
-        time += 0.005 * (delta / 16);
+        time += 0.005;
         wireframe.rotation.x = time * 0.3;
         wireframe.rotation.y = time * 0.5;
         particles.rotation.y = time * 0.05;
@@ -272,4 +295,5 @@ window.openChart = function(symbol) {
     });
 })();
 
+// Запускаем приложение
 init();
