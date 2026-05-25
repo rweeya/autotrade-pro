@@ -23,29 +23,19 @@
         .stat-value { font-size: 28px; font-weight: bold; background: linear-gradient(135deg, #ff00ff, #00ffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stat-label { font-size: 10px; color: #aaa; margin-top: 5px; }
         .signals-panel { flex: 2; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(0,255,255,0.3); padding: 20px; min-width: 450px; display: flex; flex-direction: column; }
-        .signals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .signals-header h3 { color: #00ffff; font-size: 16px; }
-        .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .filter-input { background: rgba(0,0,0,0.7); border: 1px solid #ff00ff; color: #fff; padding: 8px 12px; border-radius: 20px; font-size: 12px; flex: 1; }
-        .filter-select { background: rgba(0,0,0,0.7); border: 1px solid #ff00ff; color: #00ffff; padding: 8px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .signals-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .filter-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filter-input { background: rgba(0,0,0,0.7); border: 1px solid #ff00ff; color: #fff; padding: 8px 12px; border-radius: 20px; flex: 1; }
+        .filter-select { background: rgba(0,0,0,0.7); border: 1px solid #ff00ff; color: #00ffff; padding: 8px 12px; border-radius: 20px; cursor: pointer; }
         .timeframe-buttons { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        .tf-btn { background: rgba(0,0,0,0.5); border: 1px solid #ff00ff33; color: #aaa; padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
-        .tf-btn:hover, .tf-btn.active { background: #ff00ff33; border-color: #ff00ff; color: #ff00ff; }
-        .signals-container { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 450px; }
-        .signal-card { background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,255,255,0.05)); border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 3px solid #ff00ff; cursor: pointer; transition: all 0.2s; }
+        .tf-btn { background: rgba(0,0,0,0.5); border: 1px solid #ff00ff33; color: #aaa; padding: 4px 12px; border-radius: 20px; cursor: pointer; }
+        .tf-btn.active { background: #ff00ff33; border-color: #ff00ff; color: #ff00ff; }
+        .signals-container { flex: 1; overflow-y: auto; max-height: 450px; }
+        .signal-card { background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,255,255,0.05)); border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 3px solid #ff00ff; cursor: pointer; transition: 0.2s; }
         .signal-card:hover { transform: translateX(5px); background: rgba(255,0,255,0.2); }
-        .signal-symbol { font-size: 16px; font-weight: bold; }
-        .signal-action { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        .buy { background: #00ff88; color: #000; }
-        .sell { background: #ff4444; color: #fff; }
-        .signal-strength { font-size: 11px; color: #ffaa00; margin-left: 10px; }
+        .buy { background: #00ff88; color: #000; display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .sell { background: #ff4444; color: #fff; display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
         .footer { text-align: center; padding: 10px; font-size: 10px; color: #555; background: rgba(0,0,0,0.5); }
-        .signals-container::-webkit-scrollbar { width: 4px; }
-        .signals-container::-webkit-scrollbar-track { background: #1a1a2e; }
-        .signals-container::-webkit-scrollbar-thumb { background: #ff00ff; border-radius: 10px; }
-        .portfolio-panel { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 10px; }
-        button { transition: all 0.2s; cursor: pointer; }
-        button:hover { transform: scale(1.02); opacity: 0.9; }
         @media (max-width: 768px) { .header, .dashboard { padding: 10px; } .info-panel, .signals-panel { min-width: 100%; } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -71,9 +61,7 @@
                 </div>
             </div>
             <div class="signals-panel">
-                <div class="signals-header">
-                    <h3>🎯 TRADINGVIEW СИГНАЛЫ</h3>
-                </div>
+                <h3>🎯 TRADINGVIEW СИГНАЛЫ</h3>
                 <div class="filter-row">
                     <input type="text" id="searchFilter" class="filter-input" placeholder="🔍 Поиск...">
                     <select id="typeFilter" class="filter-select">
@@ -88,209 +76,360 @@
                     <button class="tf-btn" data-tf="4h">4ч</button>
                     <button class="tf-btn" data-tf="1d">1д</button>
                 </div>
-                <div class="signals-container" id="signalsContainer">
-                    <div style="text-align: center; padding: 40px; color: #888;">🎯 Загрузка TradingView сигналов...</div>
-                </div>
+                <div class="signals-container" id="signalsContainer">🎯 Загрузка TradingView сигналов...</div>
             </div>
         </div>
         <div class="footer">🔮 TradingView сигналы | 25+ активов | Виртуальная торговля | Клик → TradingView</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        // TradingView Module
         const TradingView = (function() {
-            let alertCallbacks = [];
-            const TV_SYMBOLS = { crypto: { 'BTC/USDT': 'BINANCE:BTCUSDT', 'ETH/USDT': 'BINANCE:ETHUSDT', 'SOL/USDT': 'BINANCE:SOLUSDT', 'BNB/USDT': 'BINANCE:BNBUSDT', 'XRP/USDT': 'BINANCE:XRPUSDT', 'DOGE/USDT': 'BINANCE:DOGEUSDT' }, forex: { 'EUR/USD': 'FX:EURUSD', 'GBP/USD': 'FX:GBPUSD', 'USD/JPY': 'FX:USDJPY' }, stock: { 'AAPL': 'NASDAQ:AAPL', 'MSFT': 'NASDAQ:MSFT', 'GOOGL': 'NASDAQ:GOOGL', 'AMZN': 'NASDAQ:AMZN', 'TSLA': 'NASDAQ:TSLA' } };
-            const CURRENT_PRICES = { 'BTC/USDT': 65234.50, 'ETH/USDT': 3456.78, 'SOL/USDT': 178.45, 'BNB/USDT': 587.23, 'XRP/USDT': 0.62, 'DOGE/USDT': 0.15, 'EUR/USD': 1.0895, 'GBP/USD': 1.2678, 'USD/JPY': 150.25, 'AAPL': 175.50, 'MSFT': 420.75, 'GOOGL': 142.30, 'AMZN': 178.90, 'TSLA': 175.80 };
+            const SYMBOLS = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BNB/USDT', 'XRP/USDT', 'DOGE/USDT', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA'];
+            const PRICES = { 'BTC/USDT':65234, 'ETH/USDT':3456, 'SOL/USDT':178, 'BNB/USDT':587, 'XRP/USDT':0.62, 'DOGE/USDT':0.15, 'EUR/USD':1.089, 'GBP/USD':1.267, 'USD/JPY':150.25, 'AAPL':175.5, 'MSFT':420.7, 'GOOGL':142.3, 'AMZN':178.9, 'TSLA':175.8, 'META':485.6, 'NVDA':905.4 };
+            
             function generateSignal(symbol) {
-                const basePrice = CURRENT_PRICES[symbol] || 100;
-                const timestamp = Date.now();
-                let hash = 0;
-                for (let i = 0; i < symbol.length; i++) { hash = ((hash << 5) - hash) + symbol.charCodeAt(i); hash = hash & hash; }
-                const seed = Math.abs(hash % 100);
-                const cycle = (timestamp / 60000) % 120;
-                const rsi = 30 + (Math.sin(cycle * 0.1) * 30 + (seed % 40)) % 70;
-                const macd = Math.sin(cycle * 0.15) * 2;
+                const rsi = 30 + Math.random() * 60;
+                const macd = (Math.random() - 0.5) * 2;
                 let score = 0, reasons = [];
-                if (rsi < 35) { score += 2; reasons.push(`RSI oversold (${Math.round(rsi)})`); }
-                else if (rsi > 65) { score -= 2; reasons.push(`RSI overbought (${Math.round(rsi)})`); }
-                if (macd > 0.3) { score += 1.5; reasons.push(`MACD bullish`); }
-                else if (macd < -0.3) { score -= 1.5; reasons.push(`MACD bearish`); }
-                let action = null;
-                let strength = Math.min(Math.abs(Math.floor(score)), 5);
-                if (score >= 2.5) action = 'buy';
-                else if (score <= -2.5) action = 'sell';
-                if (action) { const priceVariation = (Math.sin(timestamp / 10000) * 0.01); const currentPrice = basePrice * (1 + priceVariation); return { symbol: symbol, action: action, price: currentPrice, strength: strength, reasons: reasons.join(', '), rsi: Math.round(rsi), timestamp: new Date().toISOString(), source: 'TradingView' }; }
+                if (rsi < 35) { score += 2; reasons.push(`RSI ${Math.round(rsi)}`); }
+                if (rsi > 65) { score -= 2; reasons.push(`RSI ${Math.round(rsi)}`); }
+                if (macd > 0.3) { score += 1.5; reasons.push('MACD+'); }
+                if (macd < -0.3) { score -= 1.5; reasons.push('MACD-'); }
+                let action = score >= 2 ? 'buy' : (score <= -2 ? 'sell' : null);
+                if (action) {
+                    return { symbol, action, price: PRICES[symbol] || 100, strength: Math.min(Math.abs(Math.floor(score)), 5), reasons: reasons.join(', '), rsi: Math.round(rsi), timestamp: new Date().toISOString() };
+                }
                 return null;
             }
+            
             async function scanAllSignals() {
                 const signals = [];
-                for (const symbol of Object.keys(TV_SYMBOLS.crypto)) { const signal = generateSignal(symbol); if (signal) signals.push(signal); }
-                for (const symbol of Object.keys(TV_SYMBOLS.forex)) { const signal = generateSignal(symbol); if (signal) signals.push(signal); }
-                for (const symbol of Object.keys(TV_SYMBOLS.stock)) { const signal = generateSignal(symbol); if (signal) signals.push(signal); }
-                signals.sort((a, b) => b.strength - a.strength);
-                return signals;
-            }
-            function onAlert(callback) { alertCallbacks.push(callback); }
-            function startEmulation(intervalSeconds = 25) {
-                console.log(`🚀 Эмуляция TradingView сигналов запущена (каждые ${intervalSeconds} сек)`);
-                setInterval(async () => { const signals = await scanAllSignals(); if (signals.length > 0 && alertCallbacks.length > 0) alertCallbacks.forEach(cb => cb(signals[0])); }, intervalSeconds * 1000);
-            }
-            function getPrice(symbol) { return CURRENT_PRICES[symbol] || 100; }
-            return { scanAllSignals, onAlert, startEmulation, getPrice };
-        })();
-        const History = (function() {
-            let signalsHistory = [];
-            function addSignal(signal) { const record = { id: Date.now() + Math.random() * 1000, symbol: signal.symbol, action: signal.action, price: signal.price, strength: signal.strength, reasons: signal.reasons, timestamp: signal.timestamp || new Date().toISOString(), status: 'pending' }; signalsHistory.unshift(record); if (signalsHistory.length > 500) signalsHistory = signalsHistory.slice(0, 500); saveToLocalStorage(); return record; }
-            function getAccuracy() { const resolved = signalsHistory.filter(s => s.status !== 'pending'); if (resolved.length === 0) return null; const wins = resolved.filter(s => s.status === 'win').length; return (wins / resolved.length * 100).toFixed(1); }
-            function getStatistics() { const total = signalsHistory.length; const wins = signalsHistory.filter(s => s.status === 'win').length; const losses = signalsHistory.filter(s => s.status === 'loss').length; return { total, wins, losses, winRate: total > 0 ? (wins / (wins + losses) * 100).toFixed(1) : 0 }; }
-            function getRecentSignals(limit = 50) { return signalsHistory.slice(0, limit); }
-            function saveToLocalStorage() { try { localStorage.setItem('tradeSignals', JSON.stringify(signalsHistory)); } catch(e) {} }
-            function loadFromLocalStorage() { try { const saved = localStorage.getItem('tradeSignals'); if (saved) signalsHistory = JSON.parse(saved); } catch(e) {} }
-            function clearHistory() { signalsHistory = []; saveToLocalStorage(); }
-            loadFromLocalStorage();
-            return { addSignal, getAccuracy, getStatistics, getRecentSignals, clearHistory };
-        })();
-        const UI = (function() {
-            let allSignals = [];
-            function renderSignals(signals) {
-                const container = document.getElementById('signalsContainer');
-                if (!signals || signals.length === 0) { container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Нет сигналов</div>'; return; }
-                let html = '';
-                for (let s of signals) {
-                    const actionClass = s.action === 'buy' ? 'buy' : 'sell';
-                    const actionText = s.action === 'buy' ? '🟢 BUY' : '🔴 SELL';
-                    const time = new Date(s.timestamp).toLocaleTimeString();
-                    const strengthStars = '★'.repeat(s.strength) + '☆'.repeat(5 - s.strength);
-                    let icon = '💰';
-                    if (s.symbol.includes('/')) icon = '💱';
-                    else if (s.symbol.length <= 5 && !s.symbol.includes('/')) icon = '📈';
-                    html += `<div class="signal-card" data-symbol="${s.symbol}" data-action="${s.action}" onclick="window.openChart('${s.symbol}')"><div style="display: flex; justify-content: space-between; align-items: center;"><span class="signal-symbol">${icon} ${s.symbol}</span><span class="signal-action ${actionClass}">${actionText}</span><span class="signal-strength">⚡ ${strengthStars}</span></div><div style="display: flex; gap: 15px; margin-top: 8px; font-size: 11px; color: #aaa; flex-wrap: wrap;"><span>💵 $${typeof s.price === 'number' ? s.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : s.price}</span><span>📊 RSI: ${s.rsi || '—'}</span><span>⏰ ${time}</span><span>🎯 ${s.strength}/5</span></div>${s.reasons ? `<div style="margin-top: 6px; font-size: 10px; color: #ffaa66;">📊 ${s.reasons}</div>` : ''}</div>`;
+                for (let s of SYMBOLS) {
+                    let sig = generateSignal(s);
+                    if (sig) signals.push(sig);
                 }
-                const stats = History.getStatistics();
-                html += `<div style="display: flex; gap: 10px; margin-top: 15px; justify-content: center;"><button onclick="UI.showHistoryModal()" style="background: rgba(255,0,255,0.2); border: 1px solid #ff00ff; color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px;">📜 ИСТОРИЯ (${stats.total})</button><button onclick="UI.refreshSignals()" style="background: rgba(0,255,255,0.2); border: 1px solid #00ffff; color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px;">🔄 ОБНОВИТЬ</button></div>`;
-                container.innerHTML = html;
-                allSignals = signals;
+                return signals.sort((a,b) => b.strength - a.strength);
             }
-            function updateStats(signals) {
-                const total = signals.length;
-                const buys = signals.filter(s => s.action === 'buy').length;
-                const sells = total - buys;
-                const accuracy = History.getAccuracy();
-                const stats = History.getStatistics();
-                document.getElementById('totalSignals').innerText = stats.total;
-                document.getElementById('buySignals').innerText = buys;
-                document.getElementById('sellSignals').innerText = sells;
-                document.getElementById('accuracy').innerHTML = accuracy ? `${accuracy}%` : (stats.winRate > 0 ? `${stats.winRate}%` : '—');
-            }
-            function filterSignals() {
-                const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
-                const typeFilter = document.getElementById('typeFilter').value;
-                const cards = document.querySelectorAll('.signal-card');
-                cards.forEach(card => {
-                    const symbol = card.getAttribute('data-symbol')?.toLowerCase() || '';
-                    const action = card.getAttribute('data-action') || '';
-                    let show = true;
-                    if (searchTerm && !symbol.includes(searchTerm)) show = false;
-                    if (typeFilter !== 'all' && action !== typeFilter) show = false;
-                    card.style.display = show ? 'block' : 'none';
-                });
-            }
-            function showHistoryModal() {
-                const history = History.getRecentSignals(100);
-                const stats = History.getStatistics();
-                let modalHtml = `<div id="historyModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);"><div style="background: linear-gradient(135deg, #0a0a2e, #1a1a3e); border: 1px solid #ff00ff; border-radius: 20px; width: 90%; max-width: 700px; max-height: 85vh; overflow: auto; padding: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 style="color: #ff00ff;">📜 ИСТОРИЯ</h2><button onclick="UI.closeHistoryModal()" style="background: none; border: none; color: #ff00ff; font-size: 28px; cursor: pointer;">✖</button></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;"><div style="background: rgba(0,255,255,0.1); padding: 10px; border-radius: 10px; text-align: center;"><div style="font-size: 24px; color: #00ffff;">${stats.total}</div><div style="font-size: 11px;">ВСЕГО</div></div><div style="background: rgba(0,255,255,0.1); padding: 10px; border-radius: 10px; text-align: center;"><div style="font-size: 24px; color: #00ff88;">${stats.wins}</div><div style="font-size: 11px;">ВЫИГРЫШИ</div></div><div style="background: rgba(0,255,255,0.1); padding: 10px; border-radius: 10px; text-align: center;"><div style="font-size: 24px; color: #ffaa00;">${stats.winRate}%</div><div style="font-size: 11px;">ТОЧНОСТЬ</div></div></div><div style="max-height: 300px; overflow-y: auto;">${history.map(signal => { const time = new Date(signal.timestamp).toLocaleString(); return `<div style="padding: 10px; border-bottom: 1px solid rgba(255,0,255,0.1);"><div style="display: flex; justify-content: space-between;"><span style="font-weight: bold;">💰 ${signal.symbol}</span><span class="signal-action ${signal.action}" style="font-size: 10px;">${signal.action.toUpperCase()}</span></div><div style="font-size: 11px; color: #aaa;">💵 $${typeof signal.price === 'number' ? signal.price.toLocaleString() : signal.price} | ⏰ ${time}</div></div>`; }).join('')}</div><button onclick="UI.clearHistory()" style="margin-top: 20px; background: rgba(255,0,0,0.3); border: 1px solid #ff4444; color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer;">🗑️ ОЧИСТИТЬ</button></div></div>`;
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-            }
-            function closeHistoryModal() { const modal = document.getElementById('historyModal'); if (modal) modal.remove(); }
-            function clearHistory() { if (confirm('Очистить историю?')) { History.clearHistory(); closeHistoryModal(); updateStats([]); } }
-            function refreshSignals() { if (window.scanSignals) window.scanSignals(); }
-            function playAlertSound() { try { const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); oscillator.connect(gainNode); gainNode.connect(audioCtx.destination); oscillator.frequency.value = 880; gainNode.gain.value = 0.15; oscillator.start(); gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3); oscillator.stop(audioCtx.currentTime + 0.3); } catch(e) {} }
-            function speak(text) { if ('speechSynthesis' in window) { const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'ru-RU'; utterance.rate = 1.0; window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance); } }
-            function updateTime() { document.getElementById('liveTime').innerHTML = new Date().toLocaleTimeString('ru-RU'); }
-            return { renderSignals, updateStats, filterSignals, playAlertSound, speak, updateTime, showHistoryModal, closeHistoryModal, clearHistory, refreshSignals };
+            
+            return { scanAllSignals };
         })();
-        let previousSignalsList = [], isScanning = false;
-        let virtualPortfolio = { balance: 10000, positions: [] };
+        
+        // History Module
+        const History = (function() {
+            let history = [];
+            function addSignal(s) { 
+                history.unshift({...s, id:Date.now(), status:'pending'}); 
+                if(history.length > 500) history.pop(); 
+                save(); 
+            }
+            function getStats() { 
+                let total = history.length, wins = history.filter(s=>s.status==='win').length; 
+                return {total, wins, winRate: total ? ((wins/(total-wins||1))*100).toFixed(1) : 0}; 
+            }
+            function getRecent(n=50) { return history.slice(0,n); }
+            function save() { try{ localStorage.setItem('signals_history', JSON.stringify(history)); } catch(e){} }
+            function load() { try{ let d = localStorage.getItem('signals_history'); if(d) history = JSON.parse(d); } catch(e){} }
+            function clear() { history = []; save(); }
+            load();
+            return { addSignal, getStats, getRecent, clear };
+        })();
+        
+        // UI Module
+        const UI = (function() {
+            function renderSignals(signals) {
+                let html = '';
+                for(let s of signals) {
+                    let actionClass = s.action === 'buy' ? 'buy' : 'sell';
+                    let actionText = s.action === 'buy' ? '🟢 BUY' : '🔴 SELL';
+                    let stars = '★'.repeat(s.strength) + '☆'.repeat(5 - s.strength);
+                    let icon = '💰';
+                    if(s.symbol.includes('/')) icon = '💱';
+                    else if(s.symbol.length <= 5 && !s.symbol.includes('/')) icon = '📈';
+                    
+                    html += `<div class="signal-card" data-symbol="${s.symbol}" data-action="${s.action}" onclick="openChart('${s.symbol}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="signal-symbol" style="font-weight:bold;">${icon} ${s.symbol}</span>
+                            <span class="${actionClass}" style="font-size:11px;">${actionText}</span>
+                            <span style="font-size:11px; color:#fa0;">⚡ ${stars}</span>
+                        </div>
+                        <div style="display:flex; gap:15px; margin-top:8px; font-size:11px; color:#aaa; flex-wrap:wrap;">
+                            <span>💵 $${typeof s.price === 'number' ? s.price.toLocaleString() : s.price}</span>
+                            <span>📊 RSI: ${s.rsi || '—'}</span>
+                            <span>⏰ ${new Date(s.timestamp).toLocaleTimeString()}</span>
+                            <span>🎯 ${s.strength}/5</span>
+                        </div>
+                        <div style="margin-top:6px; font-size:10px; color:#fa6;">📊 ${s.reasons}</div>
+                    </div>`;
+                }
+                
+                let stats = History.getStats();
+                html += `<div style="display:flex; gap:10px; margin-top:15px; justify-content:center;">
+                    <button onclick="showHistoryModal()" style="background:rgba(255,0,255,0.2); border:1px solid #f0f; color:#fff; padding:8px 16px; border-radius:20px; cursor:pointer;">
+                        📜 ИСТОРИЯ (${stats.total})
+                    </button>
+                    <button onclick="scanSignals()" style="background:rgba(0,255,255,0.2); border:1px solid #0ff; color:#fff; padding:8px 16px; border-radius:20px; cursor:pointer;">
+                        🔄 ОБНОВИТЬ
+                    </button>
+                </div>`;
+                
+                document.getElementById('signalsContainer').innerHTML = html;
+                document.getElementById('totalSignals').innerText = stats.total;
+                document.getElementById('buySignals').innerText = signals.filter(s=>s.action==='buy').length;
+                document.getElementById('sellSignals').innerText = signals.filter(s=>s.action==='sell').length;
+                document.getElementById('accuracy').innerHTML = stats.winRate ? stats.winRate+'%' : '—';
+            }
+            
+            function playAlertSound() {
+                try {
+                    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    let oscillator = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    oscillator.frequency.value = 880;
+                    gainNode.gain.value = 0.15;
+                    oscillator.start();
+                    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                } catch(e) {}
+            }
+            
+            function speak(text) {
+                if('speechSynthesis' in window) {
+                    let utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ru-RU';
+                    utterance.rate = 1.0;
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+            
+            function updateTime() {
+                document.getElementById('liveTime').innerHTML = new Date().toLocaleTimeString('ru-RU');
+            }
+            
+            return { renderSignals, playAlertSound, speak, updateTime };
+        })();
+        
+        // App Variables
+        let previousSignalsList = [];
+        let isScanning = false;
+        
+        // Main scan function
         async function scanSignals() {
-            if (isScanning) return;
+            if(isScanning) return;
             isScanning = true;
+            
             const container = document.getElementById('signalsContainer');
-            if (container) container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">🎯 Анализ TradingView сигналов...</div>';
+            if(container) container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">🎯 Анализ TradingView сигналов...</div>';
+            
             try {
                 const signals = await TradingView.scanAllSignals();
                 signals.forEach(signal => History.addSignal(signal));
-                const newSignals = signals.filter(s => !previousSignalsList.some(p => p.symbol === s.symbol && p.action === s.action));
-                if (newSignals.length > 0) { UI.playAlertSound(); UI.speak(`Новый сигнал! ${newSignals[0].action} по ${newSignals[0].symbol}`); }
+                
+                const newSignals = signals.filter(s => 
+                    !previousSignalsList.some(p => p.symbol === s.symbol && p.action === s.action)
+                );
+                
+                if(newSignals.length > 0) {
+                    UI.playAlertSound();
+                    UI.speak(`Новый сигнал! ${newSignals[0].action} по ${newSignals[0].symbol}`);
+                }
+                
                 previousSignalsList = signals;
                 UI.renderSignals(signals);
-                UI.updateStats(signals);
-            } catch(e) { console.error(e); }
+                
+            } catch(e) {
+                console.error('Scan error:', e);
+                if(container) container.innerHTML = '<div style="text-align:center; padding:40px; color:#f44;">❌ Ошибка загрузки</div>';
+            }
+            
             isScanning = false;
         }
-        function updatePortfolioDisplay() {
-            const portfolioHtml = `<div class="portfolio-panel" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.6); border-radius: 10px;"><h4 style="color: #ff00ff;">💼 ВИРТУАЛЬНЫЙ ПОРТФЕЛЬ</h4><div>💰 Баланс: $${virtualPortfolio.balance.toFixed(2)}</div><div>🎯 Открыто: ${virtualPortfolio.positions.length}</div><button onclick="resetPortfolio()" style="margin-top: 10px; background: rgba(255,255,0,0.2); border: 1px solid #ffaa00; color: #fff; padding: 5px 10px; border-radius: 8px; cursor: pointer;">🔄 Сброс</button></div>`;
-            const infoPanel = document.querySelector('.info-panel');
-            const oldPanel = document.querySelector('.portfolio-panel');
-            if (oldPanel) oldPanel.remove();
-            if (infoPanel) infoPanel.insertAdjacentHTML('beforeend', portfolioHtml);
-        }
-        function resetPortfolio() { virtualPortfolio = { balance: 10000, positions: [] }; updatePortfolioDisplay(); UI.speak('Портфель сброшен'); }
-        function init() {
-            UI.updateTime();
-            setInterval(UI.updateTime, 1000);
-            TradingView.startEmulation(25);
-            TradingView.onAlert(() => scanSignals());
-            setTimeout(scanSignals, 1000);
-            setInterval(scanSignals, 50000);
-            document.getElementById('searchFilter').addEventListener('input', () => UI.filterSignals());
-            document.getElementById('typeFilter').addEventListener('change', () => UI.filterSignals());
-            updatePortfolioDisplay();
-            console.log('✅ Auto Trade Pro готов!');
-        }
+        
+        // Open chart function
         window.openChart = function(symbol) {
             let tvSymbol = symbol;
-            if (symbol.includes('USDT') || symbol.includes('/USDT')) { let clean = symbol.replace('/USDT', '').replace('USDT', ''); tvSymbol = `BINANCE:${clean}USDT`; }
-            else if (symbol.includes('/')) { tvSymbol = `FX:${symbol.replace('/', '')}`; }
-            else { tvSymbol = `NASDAQ:${symbol}`; }
+            if(symbol.includes('USDT') || symbol.includes('/USDT')) {
+                let clean = symbol.replace('/USDT', '').replace('USDT', '');
+                tvSymbol = `BINANCE:${clean}USDT`;
+            } else if(symbol.includes('/')) {
+                tvSymbol = `FX:${symbol.replace('/', '')}`;
+            } else {
+                tvSymbol = `NASDAQ:${symbol}`;
+            }
             window.open(`https://www.tradingview.com/chart/?symbol=${tvSymbol}`, '_blank');
         };
-        window.resetPortfolio = resetPortfolio;
-        window.scanSignals = scanSignals;
-        window.UI = UI;
+        
+        // History modal
+        window.showHistoryModal = function() {
+            let history = History.getRecent();
+            let stats = History.getStats();
+            
+            let modalHtml = `
+                <div id="historyModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; display:flex; align-items:center; justify-content:center;">
+                    <div style="background:linear-gradient(135deg, #0a0a2e, #1a1a3e); border:1px solid #f0f; border-radius:20px; width:90%; max-width:600px; max-height:80vh; overflow:auto; padding:20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                            <h2 style="color:#f0f;">📜 ИСТОРИЯ СИГНАЛОВ</h2>
+                            <button onclick="closeHistoryModal()" style="background:none; border:none; color:#f0f; font-size:28px; cursor:pointer;">✖</button>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:20px;">
+                            <div style="background:rgba(0,255,255,0.1); padding:12px; border-radius:10px; text-align:center;">
+                                <div style="font-size:28px; color:#0ff;">${stats.total}</div>
+                                <div style="font-size:11px;">ВСЕГО</div>
+                            </div>
+                            <div style="background:rgba(0,255,255,0.1); padding:12px; border-radius:10px; text-align:center;">
+                                <div style="font-size:28px; color:#0f8;">${stats.wins}</div>
+                                <div style="font-size:11px;">ВЫИГРЫШИ</div>
+                            </div>
+                            <div style="background:rgba(0,255,255,0.1); padding:12px; border-radius:10px; text-align:center;">
+                                <div style="font-size:28px; color:#fa0;">${stats.winRate}%</div>
+                                <div style="font-size:11px;">ТОЧНОСТЬ</div>
+                            </div>
+                        </div>
+                        <div style="max-height:300px; overflow-y:auto;">
+                            ${history.map(s => `
+                                <div style="padding:10px; border-bottom:1px solid rgba(255,0,255,0.1);">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <span style="font-weight:bold;">💰 ${s.symbol}</span>
+                                        <span class="${s.action}" style="font-size:10px;">${s.action.toUpperCase()}</span>
+                                    </div>
+                                    <div style="font-size:11px; color:#aaa;">
+                                        💵 $${typeof s.price === 'number' ? s.price.toLocaleString() : s.price} | ⏰ ${new Date(s.timestamp).toLocaleString()}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="clearHistoryAndClose()" style="margin-top:20px; width:100%; background:rgba(255,0,0,0.3); border:1px solid #f44; color:#fff; padding:10px; border-radius:20px; cursor:pointer;">
+                            🗑️ ОЧИСТИТЬ ИСТОРИЮ
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        };
+        
+        window.closeHistoryModal = function() {
+            let modal = document.getElementById('historyModal');
+            if(modal) modal.remove();
+        };
+        
+        window.clearHistoryAndClose = function() {
+            if(confirm('Очистить всю историю сигналов?')) {
+                History.clear();
+                closeHistoryModal();
+                scanSignals();
+                UI.speak('История очищена');
+            }
+        };
+        
+        // Filter functions
+        function setupFilters() {
+            let searchInput = document.getElementById('searchFilter');
+            let typeSelect = document.getElementById('typeFilter');
+            
+            if(searchInput) {
+                searchInput.addEventListener('input', () => {
+                    let term = searchInput.value.toLowerCase();
+                    document.querySelectorAll('.signal-card').forEach(card => {
+                        let symbol = card.getAttribute('data-symbol')?.toLowerCase() || '';
+                        card.style.display = symbol.includes(term) ? 'block' : 'none';
+                    });
+                });
+            }
+            
+            if(typeSelect) {
+                typeSelect.addEventListener('change', () => {
+                    let type = typeSelect.value;
+                    document.querySelectorAll('.signal-card').forEach(card => {
+                        let action = card.getAttribute('data-action') || '';
+                        card.style.display = (type === 'all' || action === type) ? 'block' : 'none';
+                    });
+                });
+            }
+        }
+        
+        // Timeframe buttons
+        function setupTimeframes() {
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    scanSignals();
+                });
+            });
+        }
+        
+        // 3D Scene
         (function init3D() {
             const canvas = document.getElementById('bg-canvas');
-            if (!canvas) return;
+            if(!canvas) return;
+            
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x050510);
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 0, 15);
             const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            
             const gridHelper = new THREE.GridHelper(30, 40, 0xff00ff, 0x00ffff);
             gridHelper.position.y = -3;
             scene.add(gridHelper);
+            
             const geometry = new THREE.BoxGeometry(3, 3, 3);
             const edges = new THREE.EdgesGeometry(geometry);
             const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xff00ff }));
             scene.add(wireframe);
-            const particlesCount = 600;
+            
+            const particlesCount = 500;
             const particlesGeometry = new THREE.BufferGeometry();
             const particlesPositions = new Float32Array(particlesCount * 3);
-            for (let i = 0; i < particlesCount; i++) { particlesPositions[i*3] = (Math.random() - 0.5) * 50; particlesPositions[i*3+1] = (Math.random() - 0.5) * 30; particlesPositions[i*3+2] = (Math.random() - 0.5) * 30 - 15; }
+            for(let i = 0; i < particlesCount; i++) {
+                particlesPositions[i*3] = (Math.random() - 0.5) * 50;
+                particlesPositions[i*3+1] = (Math.random() - 0.5) * 30;
+                particlesPositions[i*3+2] = (Math.random() - 0.5) * 30 - 15;
+            }
             particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlesPositions, 3));
             const particlesMaterial = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.08 });
             const particles = new THREE.Points(particlesGeometry, particlesMaterial);
             scene.add(particles);
+            
             const ambientLight = new THREE.AmbientLight(0x404060);
             scene.add(ambientLight);
-            const pointLight = new THREE.PointLight(0xff00ff, 0.8, 30);
+            const pointLight = new THREE.PointLight(0xff00ff, 0.6, 30);
             pointLight.position.set(2, 3, 4);
             scene.add(pointLight);
+            
             let time = 0;
-            function animate() { requestAnimationFrame(animate); time += 0.005; wireframe.rotation.x = time * 0.3; wireframe.rotation.y = time * 0.5; particles.rotation.y = time * 0.05; renderer.render(scene, camera); }
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.005;
+                wireframe.rotation.x = time * 0.3;
+                wireframe.rotation.y = time * 0.5;
+                particles.rotation.y = time * 0.05;
+                renderer.render(scene, camera);
+            }
             animate();
-            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
         })();
+        
+        // Initialize App
+        function init() {
+            UI.updateTime();
+            setInterval(UI.updateTime, 1000);
+            setupFilters();
+            setupTimeframes();
+            setTimeout(scanSignals, 500);
+            setInterval(scanSignals, 30000);
+            console.log('✅ Auto Trade Pro готов!');
+        }
+        
         init();
     </script>
 </body>
