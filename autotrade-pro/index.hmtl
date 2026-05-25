@@ -55,14 +55,11 @@
         </div>
         
         <div class="footer">
-            🔮 TradingView интегрированные сигналы | 25+ активов | Виртуальная торговля
+            🔮 TradingView сигналы | 25+ активов | Виртуальная торговля | Клик → TradingView
         </div>
     </div>
 
-    <!-- БИБЛИОТЕКИ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- МОДУЛИ -->
     <script src="js/indicators.js"></script>
     <script src="js/tradingview.js"></script>
     <script src="js/history.js"></script>
