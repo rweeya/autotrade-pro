@@ -6,8 +6,11 @@ const API = (function() {
     const SYMBOLS = {
         crypto: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT', 'UNIUSDT', 'ATOMUSDT', 'NEARUSDT', 'OPUSDT', 'ARBUSDT', 'APTUSDT', 'LTCUSDT', 'BCHUSDT', 'ETCUSDT'],
         forex: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'],
-        stock: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'JNJ', 'WMT']
+        stock: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'JPM', 'JNJ', 'WMT', 'KO', 'DIS', 'NFLX']
     };
+    
+    // ТВОЙ API КЛЮЧ ALPHA VANTAGE
+    const ALPHA_VANTAGE_KEY = 'JOWNUIILXWSDDX0O';
     
     function getAllSymbols() {
         return [...SYMBOLS.crypto, ...SYMBOLS.forex, ...SYMBOLS.stock];
@@ -20,7 +23,7 @@ const API = (function() {
         return 'crypto';
     }
     
-    // ===== ГЕНЕРАЦИЯ ТЕСТОВЫХ ДАННЫХ =====
+    // ===== ГЕНЕРАЦИЯ ТЕСТОВЫХ ДАННЫХ (запасной вариант) =====
     function generateMockData(symbol, basePrice = null) {
         let price = basePrice || 100;
         if (symbol.includes('BTC')) price = 65000;
@@ -33,6 +36,7 @@ const API = (function() {
         else if (symbol.includes('AAPL')) price = 175;
         else if (symbol.includes('MSFT')) price = 420;
         else if (symbol.includes('TSLA')) price = 170;
+        else if (symbol.includes('NVDA')) price = 900;
         else price = 50 + Math.random() * 200;
         
         let closes = [], highs = [], lows = [];
@@ -73,31 +77,41 @@ const API = (function() {
             
             return closes.length > 0 ? { closes, highs, lows } : generateMockData(symbol);
         } catch(e) {
+            console.log(`Binance ошибка для ${symbol}, использую тестовые данные`);
             return generateMockData(symbol);
         }
     }
     
     // ===== ALPHA VANTAGE API (ФОРЕКС + АКЦИИ) =====
-    // Бесплатный API ключ (зарегистрируйся на https://www.alphavantage.co/support/#api-key)
-    const ALPHA_VANTAGE_KEY = 'YOUR_API_KEY'; // Замени на свой ключ
-    
-    async function getForexStockData(symbol, interval = '60min') {
+    async function getAlphaVantageData(symbol, interval = '1h') {
         try {
-            // Для форекс и акций используем Alpha Vantage
             const isForex = SYMBOLS.forex.includes(symbol);
             let url;
             
             if (isForex) {
-                // Форекс: EURUSD, GBPUSD и т.д.
-                const fromTo = symbol;
-                url = `https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=${fromTo.slice(0,3)}&to_symbol=${fromTo.slice(3)}&apikey=${ALPHA_VANTAGE_KEY}`;
+                // Форекс: EURUSD, GBPUSD, USDJPY и т.д.
+                const fromCurrency = symbol.slice(0, 3);
+                const toCurrency = symbol.slice(3);
+                url = `https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=${fromCurrency}&to_symbol=${toCurrency}&apikey=${ALPHA_VANTAGE_KEY}`;
             } else {
                 // Акции
                 url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
             }
             
+            console.log(`Запрос к Alpha Vantage: ${symbol}`);
             const response = await fetch(url);
             const data = await response.json();
+            
+            // Проверка на ошибки
+            if (data['Error Message']) {
+                console.log(`Alpha Vantage ошибка для ${symbol}: ${data['Error Message']}`);
+                return generateMockData(symbol);
+            }
+            
+            if (data['Note']) {
+                console.log(`Alpha Vantage лимит: ${data['Note']}`);
+                return generateMockData(symbol);
+            }
             
             let timeSeries = data['Time Series (Daily)'] || data['Time Series FX (Daily)'];
             
@@ -111,11 +125,15 @@ const API = (function() {
                     lows.push(parseFloat(timeSeries[date]['3. low']));
                 }
                 
-                if (closes.length > 0) return { closes, highs, lows };
+                if (closes.length > 0) {
+                    console.log(`✅ Получены данные для ${symbol}: ${closes.length} свечей`);
+                    return { closes, highs, lows };
+                }
             }
             
             return generateMockData(symbol);
         } catch(e) {
+            console.log(`Alpha Vantage ошибка для ${symbol}:`, e);
             return generateMockData(symbol);
         }
     }
@@ -127,9 +145,8 @@ const API = (function() {
         if (assetType === 'crypto') {
             return await getBinanceData(symbol, interval);
         } else {
-            // Для форекс и акций пока используем эмуляцию
-            // Чтобы получить реальные данные — зарегистрируйся на Alpha Vantage
-            return generateMockData(symbol);
+            // Для форекс и акций используем Alpha Vantage
+            return await getAlphaVantageData(symbol, interval);
         }
     }
     
